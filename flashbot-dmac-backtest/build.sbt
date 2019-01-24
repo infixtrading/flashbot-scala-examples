@@ -7,7 +7,7 @@ ThisBuild / organizationName := "example"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "Flashbot MACD Backtest",
+    name := "Flashbot DMAC Backtest",
     libraryDependencies += scalaTest % Test
   )
 

@@ -1,31 +1,31 @@
 import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import com.infixtrading.flashbot.client.FlashbotClient
-import com.infixtrading.flashbot.core.FlashbotConfig
+import com.infixtrading.flashbot.core.{FlashbotConfig, Trade}
 import com.infixtrading.flashbot.engine.TradingEngine
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
-object Engine extends App {
+object MarketDataDashboard extends App {
   // Load config
   val config = FlashbotConfig.load
 
   // Create the actor system and trading engine
-  val system = ActorSystem("example-system", config.conf)
+  implicit val system = ActorSystem("example-system", config.conf)
+  implicit val materializer = ActorMaterializer()
   val engine = system.actorOf(TradingEngine.props("example-engine"))
 
   // Create a FlashbotClient
   val client = new FlashbotClient(engine)
 
-  // Ping the trading engine.
-  // All client methods have an async version that return a future instead of blocking.
-  // In this case, that would be: client.pingAsync() => Future[Pong]
-  val pong = client.ping()
-
-  // Log engine start time to stdout
-  println(s"Engine started at: ${pong.startedAt}")
+  // Poll and print trades for 10 seconds.
+  val done = client.pollingMarketData[Trade]("coinbase/btc_usd/trades")
+    .runForeach(println)
+  Await.ready(done, 10 seconds)
 
   // Gracefully shutdown the system and exit the program.
-  val term = Await.ready(system.terminate(), 5.seconds)
+  val term = Await.ready(system.terminate(), 5 seconds)
   System.exit(if (term.value.get.isSuccess) 0 else 1)
 }

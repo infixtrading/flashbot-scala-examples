@@ -1,5 +1,5 @@
 # Flashbot Starter Scala Project
-This is the source code for the [Flashbot Project Setup (Scala)](https://github.com/infixtrading/flashbot/wiki/Project-Setup-(Scala) tutorial.
+This is the source code for the [Flashbot Project Setup (Scala)](https://github.com/infixtrading/flashbot/wiki/Project-Setup-(Scala)) tutorial.
 
 The Java version of this project can be found at [Flashbot Starter Java Project](https://github.com/infixtrading/flashbot-java-examples/tree/master/flashbot-starter-project)
 

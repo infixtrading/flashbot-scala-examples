@@ -1,7 +1,7 @@
-# Flashbot Starter Scala Project
+# Flashbot Starter Project - Scala
 This is the source code for the [Flashbot Project Setup (Scala)](https://github.com/infixtrading/flashbot/wiki/Project-Setup-(Scala)) tutorial.
 
-The Java version of this project can be found at [Flashbot Starter Java Project](https://github.com/infixtrading/flashbot-java-examples/tree/master/flashbot-starter-project)
+The Java version of this project can be found at [Flashbot Starter Project - Java](https://github.com/infixtrading/flashbot-java-examples/tree/master/flashbot-starter-project)
 
 ***
 
@@ -11,9 +11,8 @@ Looking for Java instructions? Go to [Project Setup (Java)](https://github.com/i
 
 **Contents**
 1. [Create an SBT project](https://github.com/infixtrading/flashbot/wiki/Tutorial:-Backtesting-a-Built-In-Strategy#1-collect-market-data)
-2. [Add the Flashbot dependency](https://github.com/infixtrading/flashbot/wiki/Tutorial:-Backtesting-a-Built-In-Strategy#2-run-backtests-using-flashbotclient)
-3. [Configuration](https://github.com/infixtrading/flashbot/wiki/Tutorial:-Backtesting-a-Built-In-Strategy#3-run-backtests-using-the-dashboard)
-4. [Pinging a simple TradingEngine](https://github.com/infixtrading/flashbot/wiki/Tutorial:-Backtesting-a-Built-In-Strategy#3-run-backtests-using-the-dashboard)
+2. [Configuration](https://github.com/infixtrading/flashbot/wiki/Tutorial:-Backtesting-a-Built-In-Strategy#3-run-backtests-using-the-dashboard)
+3. [Pinging a simple TradingEngine](https://github.com/infixtrading/flashbot/wiki/Tutorial:-Backtesting-a-Built-In-Strategy#3-run-backtests-using-the-dashboard)
 
 *The source code for this tutorial can be found at:*
 * Java: [flashbot-starter-project](https://github.com/infixtrading/flashbot-java-examples/tree/master/flashbot-starter-project)
@@ -22,39 +21,32 @@ Looking for Java instructions? Go to [Project Setup (Java)](https://github.com/i
 ****
 
 ### 1. Create an SBT project
-Start a new SBT project. An easy way to do this is with the `scala-seed` Giter8 template, like this:
-```bash
-# Use the project name "Flashbot Starter Project". This initializes
-# the project in a new directory named "flashbot-starter-project".
-$ sbt new scala/scala-seed.g8
+Create a new folder named "flashbot-starter-project" and navigate to it. 
+Create a build.sbt file in it that looks like this:
+```sbtshell
+name := "Flashbot Starter Project"
+
+// Adds the Flashbot repository and library dependencies
+resolvers += Resolver.bintrayRepo("infixtrading", "flashbot")
+libraryDependencies ++= Seq(
+    "com.infixtrading" %% "flashbot-client" % "0.1.0",
+    "com.infixtrading" %% "flashbot-server" % "0.1.0"
+)
+
+// Prevents "sbt run" from hanging when the program exits
+fork in run := true
 ```
 
-Ensure everything is working by navigating to the directory and running the project. 
-This should print "hello" to the console.
-```bash
-$ cd flashbot-starter-project
-$ sbt run
-[info] ... a bunch of logging ...
-[info] Running example.Hello
-hello
-[success] Total time: 1 s, completed Jan 16, 2019 12:59:58 PM
-```
+This creates a new SBT Scala project that includes Flashbot as a dependency. 
+This also automatically pulls in Akka as a transitive dependency, which we'll use in our Main class.
 
-### 2. Add the Flashbot dependency
-Edit your build.sbt file per the [installation instructions](https://github.com/infixtrading/flashbot#sbt) 
-in the README. This includes adding the Flashbot repository as well as the `flashbot-client` and 
-`flashbot-server` dependencies. This also automatically pulls in Akka as a transitive dependency, 
-which we'll use in our Main class.
+Additionally, create two empty directories:
+* src/main/resources - Config files go here
+* src/main/scala - Source files go here
 
-Additionally:
-1. Add `fork in run := true` to your project settings. This allows `sbt run` to exit properly.
-2. Remove the `organization` and `organizationName` settings.
-
-The final build.sbt should look like [this](https://github.com/infixtrading/flashbot-scala-examples/blob/master/flashbot-starter-project/build.sbt).
-
-### 3. Configuration
+### 2. Configuration
 Flashbot (and Akka) use [Typesafe Config](https://github.com/lightbend/config) for configuration. 
-Create a file named application.conf in src/main/resources and add the following lines:
+Create a file (src/main/resources/application.conf) and add the following lines:
 ```
 flashbot {
   engine-root = "target/flashbot/engines"
@@ -65,20 +57,14 @@ akka {
 }
 ```
 
-This configures Flashbot to use the <project_root>/target/flashbot/engines directory 
+This configures Flashbot to use the target/flashbot/engines directory 
 for all TradingEngine persistence. This is where all bot state is saved. 
 Note that this is the data storage for the TradingEngine itself, which is separate
 from the SQL database (PostgreSQL or H2) that we'll be using to store market data. 
 Check out the [reference config](https://github.com/infixtrading/flashbot/blob/master/modules/server/src/main/resources/reference.conf) 
 to see all the defaults.
 
-### 4. Pinging a simple TradingEngine
-First, if you used the Giter8 template, delete the `example` package that comes with it:
-```bash
-$ rm -rf src/main/scala/example
-$ rm -rf src/test/scala/example
-```
-
+### 3. Pinging a simple TradingEngine
 Create a new Scala file (src/main/scala/PingEngine.scala) that will hold our main app. In it, we'll create a new actor system named "example-system" and a TradingEngine actor with the default props. Then we'll ping the engine to ensure that is started properly. Here's what MarketDataDashboard.scala should look like:
 
 ```scala

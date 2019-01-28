@@ -5,12 +5,13 @@ All code snippets are in Scala, as (apart from syntax) the Java version is nearl
 Additionally, source code for the example in this tutorial is published for both Java and Scala.
 
 **Contents**
-1. [Setup the database]()
-2. [Collect market data]()
+1. [Create an SBT project]()
+2. [Setup the database]()
+3. [Collect market data]()
     1. [Configuration]()
     2. [Start a DataServer]()
-3. [Poll market data with FlashbotClient]()
-4. [Explore the market data dashboard]()
+4. [Poll market data with FlashbotClient]()
+5. [Explore the market data dashboard]()
     1. [Start a TradingEngine]()
     2. [Setup Grafana]()
     3. [Open the dashboard]()
@@ -21,10 +22,28 @@ Additionally, source code for the example in this tutorial is published for both
 
 ****
 
-The structure of the project in this example is the same as the projects in the [Project Setup (Java)]()
-and [Project Setup (Scala)]() tutorial. The only difference is that the name of this project is "Flashbot Market Data Dashboard". Checkout the [build.sbt]() file as a reference.
+### 1. Create an SBT project
+Create a new folder named "flashbot-market-data-dashboard" and navigate to it. 
+Create a build.sbt file in it that looks like this:
+```sbtshell
+name := "Flashbot Market Data Dashboard"
 
-### 1. Setup the database
+// Adds the Flashbot repository and library dependencies
+resolvers += Resolver.bintrayRepo("infixtrading", "flashbot")
+libraryDependencies ++= Seq(
+    "com.infixtrading" %% "flashbot-client" % "0.1.0",
+    "com.infixtrading" %% "flashbot-server" % "0.1.0"
+)
+
+// Prevents "sbt run" from hanging when the program exits
+fork in run := true
+```
+
+Additionally, create two empty directories:
+* src/main/resources - Config files go here
+* src/main/scala - Source files go here
+
+### 2. Setup the database
 Flashbot always saves market data to a SQL database. This step is optional during development because
 an *in-memory* embedded H2 database is setup by default. This means that all data will be lost once 
 the program exits. While this is useful in development, we'll need to data to disk in most cases.
@@ -45,7 +64,7 @@ These defaults are all listed near the bottom of the [reference.conf](https://gi
 
 You can also create your own database configurations in your application.conf similar to the included ones. Then you can enable one of them by setting the `flashbot.db` setting to their property key.
 
-### 2. Collect market data
+### 3. Collect market data
 
 #### i. Configuration
 
@@ -58,7 +77,9 @@ The first thing we need to do is add the `flashbot.sources` and `flashbot.ingest
 
 ```
 flashbot {
-  ...
+  engine-root = "target/flashbot/engines"
+  db = "postgres"
+  
   sources {
     # Declares the "btc_usd" and "eth_usd" pairs for the "coinbase" data source.
     coinbase.sources = ["btc_usd", "eth_usd"]
@@ -90,7 +111,6 @@ flashbot {
       ["*/*/book", "1h"]
     ]
   }
-  ...
 }
 ```
 
@@ -129,13 +149,13 @@ we don't need to assign a unique name in each data server's props.
 We'll run this in a separate process, so that it can collect data in the background
 while we interact with it in various ways.
 
-Run `MarketDataServer` using an IDE or open a separate command line terminal and run it with sbt:
+Run `MarketDataServer` using an IDE or open a separate command line terminal and run it with SBT:
 ```bash
 $ sbt "runMain MarketDataServer"
 TODO: output
 ```
 
-### 3. Poll market data with FlashbotClient
+### 4. Poll market data with FlashbotClient
 
 Now we are collecting data, but how do we inspect it? We'll start by requesting
 some data manually via `FlashbotClient` in a separate process. Later, we'll simplify
@@ -234,7 +254,16 @@ After that is done, we'll want to shutdown the actor system (which returns anoth
 `Future`, and after that, we can exit the program. The `Await.ready(for { ... } yield ...)`
 syntax is a convenient way of chaining those Futures together.
 
-### 4. Explore the market data dashboard
+#### Run it
+
+Now you can run `PollTrades` using an IDE or open a separate command line terminal and run it with SBT:
+```bash
+$ sbt "runMain PollTrades"
+TODO: output
+```
+
+
+### 5. Explore the market data dashboard
 Now we know how to query data from our market data cluster via code. But that's
 not always very convenient. Most of the time, we just want to explore the data
 visually. Enter Grafana.
@@ -262,6 +291,24 @@ flashbot.grafana.data-source-port = 3002
 And use that config to start a long running `TradingEngine` in a new file 
 (src/main/scala/MarketDataDashboard.scala):
 ```scala
+import akka.actor.ActorSystem
+import flashbot.config.FlashbotConfig
+import flashbot.engine.TradingEngine
+
+object MarketDataDashboard extends App {
+  // Load config from src/main/resources/dashboard.conf
+  val config = FlashbotConfig.load("dashboard")
+
+  // Create the actor system and trading engine
+  val system = ActorSystem(config.systemName, config.conf)
+  val engine = system.actorOf(TradingEngine.props("dashboard-engine", config))
+}
+```
+
+Now run `MarketDataDashboard` using an IDE or open a separate command line terminal and run it with SBT:
+```bash
+$ sbt "runMain MarketDataDashboard"
+TODO: output
 ```
 
 #### ii. Setup Grafana
@@ -296,7 +343,6 @@ In Grafana, go to Configuration > Data Sources ([http://localhost:3000/datasourc
 If you get "HTTP Error Bad Gateway", double check that the trading engine is 
 running with the `flashbot.grafana.data-source-port = 3002` property.
 
-
 #### iii. Open the dashboard
 Once Grafana was started, the engine immediately created a new Grafana folder
 named "Flashbot" that will contain all dashboards managed by Flashbot. It also
@@ -305,7 +351,7 @@ Grafana main page ([http://localhost:3000](http://localhost:3000)), clicking on
 the "Home" dropdown in the top left corner, and selecting the "Market Data" 
 dashboard from the "Flashbot" folder.
 
-This should display the market data that you've collected so far. It should look like this:
+This will display the market data that you've collected so far. It should look like this:
 
 TODO: Screenshot
 

@@ -203,12 +203,12 @@ object PollTrades extends App {
 
 Let's review each step here:
 
-##### A. Load engine.conf
+#### A. Load engine.conf
 This creates a `FlashbotConfig` that is based off of engine.conf, which has
 identical properties to application.conf except for the `akka.port`. An Akka
 system created with this config will bind to 2552 instead of the default 2551.
 
-##### B. Create the actor system, materializer, and engine
+#### B. Create the actor system, materializer, and engine
 Since we'll be working with Akka streams, we'll need an implicit `ActorMaterializer`
 in scope in order to run operations such as `runForeach`, as we do in step D. If
 you don't know what this is, it's safe to just copy/paste not worry about it yet.
@@ -216,19 +216,19 @@ you don't know what this is, it's safe to just copy/paste not worry about it yet
 Upon creation, the engine automatically forms a cluster with the `DataServer`
 that is already running in another process.
 
-##### C. Create the client
+#### C. Create the client
 As before, create a new `FlashbotClient` and link it to the engine. What's
 different this time though, is the engine is in a cluster with a data server.
 That means that this client can now access live and historical data streams that
 are being collected from the data server in another process.
 
-##### D. Poll and print trades
+#### D. Poll and print trades
 Use the `client.pollingMarketData` method to get an Akka streams `Source` of 
 live trades. The `takeWithin` method closes this stream 15 seconds after
 materialization. And the `runForeach` method actually runs (materializes) the
 stream and prints every trade that comes through.
 
-##### E. Exit the system after polling
+#### E. Exit the system after polling
 `donePolling` is a `Future` that completes after 15 seconds of polling trades.
 After that is done, we'll want to shutdown the actor system (which returns another)
 `Future`, and after that, we can exit the program. The `Await.ready(for { ... } yield ...)`

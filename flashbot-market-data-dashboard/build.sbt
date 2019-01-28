@@ -2,13 +2,15 @@ import Dependencies._
 
 ThisBuild / scalaVersion     := "2.12.8"
 ThisBuild / version          := "0.1.0-SNAPSHOT"
-ThisBuild / organization     := "com.example"
-ThisBuild / organizationName := "example"
 
 lazy val root = (project in file("."))
   .settings(
     name := "Flashbot Market Data Dashboard",
-    libraryDependencies += scalaTest % Test
+    resolvers += Resolver.bintrayRepo("infixtrading", "flashbot"),
+    libraryDependencies ++= Seq(
+      scalaTest % Test,
+      "com.infixtrading" %% "flashbot-client" % "0.1.0-SNAPSHOT",
+      "com.infixtrading" %% "flashbot-server" % "0.1.0-SNAPSHOT"
+    ),
+    fork in run := true
   )
-
-// See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
